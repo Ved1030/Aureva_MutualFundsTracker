@@ -11,9 +11,7 @@ dotenv.config();
 
 const app = express();
 
-console.log('[SERVER] Initializing Aureva Backend...');
-console.log('[SERVER] NODE_ENV:', process.env.NODE_ENV || 'development');
-console.log('[SERVER] PORT:', process.env.PORT || '5000 (default)');
+console.log(`[SERVER] start env=${process.env.NODE_ENV || 'development'} port=${process.env.PORT || '5000'}`);
 
 app.set('query parser', 'extended');
 
@@ -74,14 +72,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-console.log('[SERVER] Registering routes...');
-console.log('[SERVER]   POST /api/auth/register');
-console.log('[SERVER]   POST /api/auth/login');
-console.log('[SERVER]   GET  /api/funds/search');
-console.log('[SERVER]   GET  /api/funds/:schemeCode');
-console.log('[SERVER]   GET  /api/watchlist');
-console.log('[SERVER]   POST /api/watchlist');
-console.log('[SERVER]   DELETE /api/watchlist/:schemeCode');
+console.log('[SERVER] routes registered');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/funds', fundRoutes);
@@ -110,9 +101,7 @@ setInterval(() => {
     heapUsed: MB(mem.heapUsed) + 'MB',
     external: MB(mem.external) + 'MB',
     cacheKeys: cacheStats.keys,
-    cacheMaxKeys: cacheStats.maxKeys,
     cacheSizeMB: cacheStats.totalSizeMB + 'MB',
-    cacheHitRate: cacheStats.hitRate,
   }));
 }, 60000);
 
@@ -121,21 +110,10 @@ const PORT = process.env.PORT || 5000;
 connectDB().then(() => {
   console.log('[SERVER] MongoDB connected, starting HTTP server...');
   app.listen(PORT, () => {
-    console.log('══════════════════════════════════════════');
-    console.log('  [SERVER] SERVER STARTED');
-    console.log(`  [SERVER] PORT: ${PORT}`);
-    console.log(`  [SERVER] NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`  [SERVER] MongoDB: Connected`);
-    console.log(`  [SERVER] Memory limit: ${MB(process.memoryUsage().rss)}MB (initial)`);
-    console.log(`  [SERVER] Cache max keys: ${cache.getStats().maxKeys}`);
-    console.log(`  [SERVER] CORS: ${allowedOrigins.length} local origins + *.vercel.app`);
-    console.log('══════════════════════════════════════════');
+    const memInit = MB(process.memoryUsage().rss);
+    console.log(`[SERVER] started port=${PORT} mongo=connected mem=${memInit}MB cors=${allowedOrigins.length}+1`);
   });
 }).catch((err) => {
-  console.error('══════════════════════════════════════════');
-  console.error('  [SERVER] FAILED TO START');
-  console.error(`  [SERVER] MongoDB connection error: ${err.message}`);
-  console.error('  [SERVER] Check MONGO_URI environment variable.');
-  console.error('══════════════════════════════════════════');
+    console.error(`[SERVER] failed to start mongo=${err.message}`);
   process.exit(1);
 });

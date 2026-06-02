@@ -18,6 +18,7 @@ const searchFunds = async (req, res) => {
     const q = getQueryParam(req, 'q');
 
     if (!q || !q.trim()) {
+      console.warn(`[FUNDS] Search missing query param`);
       return res.status(400).json({ message: 'Search query is required' });
     }
 
@@ -25,17 +26,19 @@ const searchFunds = async (req, res) => {
     let funds = cache.get(cacheKey);
 
     if (funds === undefined) {
-      console.log('[MFAPI] Fetching all funds from MFAPI...');
+      console.log('[FUNDS] Cache miss — fetching all funds from MFAPI...');
       const response = await axios.get(`${MFAPI_BASE}/mf`, { timeout: 15000 });
       funds = response.data;
 
       if (!Array.isArray(funds)) {
-        console.error('[MFAPI] Invalid response format:', typeof funds);
+        console.error('[FUNDS] Invalid MFAPI response format');
         return res.status(502).json({ message: 'Invalid response from MFAPI' });
       }
 
-      console.log(`[MFAPI] Cached ${funds.length} funds`);
+      console.log(`[FUNDS] Cached ${funds.length} funds (TTL: 3600s)`);
       cache.set(cacheKey, funds, 3600);
+    } else {
+      console.log(`[FUNDS] Cache hit — ${funds.length} funds available`);
     }
 
     const query = q.trim().toLowerCase();
@@ -45,18 +48,18 @@ const searchFunds = async (req, res) => {
     );
 
     const results = filtered.slice(0, 25);
-    console.log(`[Search] "${q}" → ${results.length} results`);
+    console.log(`[FUNDS] Search "${q}" → ${results.length} results`);
     res.json(results);
   } catch (error) {
     if (error.code === 'ECONNABORTED') {
-      console.error('[MFAPI] Request timed out');
+      console.error('[FUNDS] MFAPI request timed out');
       return res.status(504).json({ message: 'MFAPI request timed out. Please try again.' });
     }
     if (error.response) {
-      console.error('[MFAPI] HTTP error:', error.response.status, error.response.statusText);
+      console.error('[FUNDS] MFAPI HTTP error:', error.response.status);
       return res.status(502).json({ message: `MFAPI returned status ${error.response.status}` });
     }
-    console.error('[Search] Error:', error.message);
+    console.error('[FUNDS] Search error:', error.message);
     res.status(500).json({ message: 'Failed to search funds. Please try again.' });
   }
 };
@@ -65,11 +68,14 @@ const getFundDetails = async (req, res) => {
   try {
     const { schemeCode } = req.params;
 
+    console.log(`[FUNDS] Details request — schemeCode: ${schemeCode}`);
+
     if (!schemeCode) {
       return res.status(400).json({ message: 'Scheme code is required' });
     }
 
     if (!/^\d+$/.test(schemeCode)) {
+      console.warn(`[FUNDS] Invalid schemeCode format: ${schemeCode}`);
       return res.status(400).json({ message: 'Invalid scheme code format' });
     }
 
@@ -77,17 +83,19 @@ const getFundDetails = async (req, res) => {
     let data = cache.get(cacheKey);
 
     if (data === undefined) {
-      console.log(`[MFAPI] Fetching fund ${schemeCode}...`);
+      console.log(`[FUNDS] Cache miss — fetching fund ${schemeCode} from MFAPI...`);
       const response = await axios.get(`${MFAPI_BASE}/mf/${schemeCode}`, { timeout: 15000 });
       data = response.data;
 
       if (!data || !data.meta) {
-        console.error(`[MFAPI] Fund ${schemeCode} not found in response`);
+        console.error(`[FUNDS] Fund ${schemeCode} not found in MFAPI response`);
         return res.status(404).json({ message: 'Fund not found' });
       }
 
       cache.set(cacheKey, data, 3600);
-      console.log(`[MFAPI] Fund ${schemeCode} cached`);
+      console.log(`[FUNDS] Fund ${schemeCode} cached (${data.data?.length || 0} NAV records)`);
+    } else {
+      console.log(`[FUNDS] Cache hit — fund ${schemeCode}`);
     }
 
     res.json(data);
@@ -96,14 +104,14 @@ const getFundDetails = async (req, res) => {
       return res.status(404).json({ message: 'Fund not found' });
     }
     if (error.code === 'ECONNABORTED') {
-      console.error('[MFAPI] Request timed out');
+      console.error('[FUNDS] MFAPI request timed out');
       return res.status(504).json({ message: 'MFAPI request timed out. Please try again.' });
     }
     if (error.response) {
-      console.error('[MFAPI] HTTP error:', error.response.status);
+      console.error('[FUNDS] MFAPI HTTP error:', error.response.status);
       return res.status(502).json({ message: `MFAPI returned status ${error.response.status}` });
     }
-    console.error('[FundDetails] Error:', error.message);
+    console.error('[FUNDS] Details error:', error.message);
     res.status(500).json({ message: 'Failed to load fund details. Please try again.' });
   }
 };

@@ -2,9 +2,12 @@ const Watchlist = require('../models/Watchlist');
 
 const getWatchlist = async (req, res) => {
   try {
+    console.log(`[WATCHLIST] Fetching watchlist for user: ${req.user.id}`);
     const watchlist = await Watchlist.find({ user: req.user.id }).sort({ addedAt: -1 });
+    console.log(`[WATCHLIST] Found ${watchlist.length} entries`);
     res.json(watchlist);
   } catch (error) {
+    console.error('[WATCHLIST] Error fetching:', error.message);
     res.status(500).json({ message: 'Error fetching watchlist' });
   }
 };
@@ -13,7 +16,10 @@ const addToWatchlist = async (req, res) => {
   try {
     const { schemeCode, schemeName } = req.body;
 
+    console.log(`[WATCHLIST] Add attempt — user: ${req.user.id}, schemeCode: ${schemeCode}`);
+
     if (!schemeCode || !schemeName) {
+      console.warn('[WATCHLIST] Missing fields:', { schemeCode, schemeName });
       return res.status(400).json({ message: 'schemeCode and schemeName are required' });
     }
 
@@ -23,6 +29,7 @@ const addToWatchlist = async (req, res) => {
     });
 
     if (existing) {
+      console.warn(`[WATCHLIST] Duplicate — user: ${req.user.id}, schemeCode: ${schemeCode}`);
       return res.status(409).json({ message: 'Fund is already in your watchlist' });
     }
 
@@ -32,11 +39,14 @@ const addToWatchlist = async (req, res) => {
       schemeName,
     });
 
+    console.log(`[WATCHLIST] Added — id: ${entry._id}, schemeCode: ${schemeCode}`);
     res.status(201).json(entry);
   } catch (error) {
     if (error.code === 11000) {
+      console.warn('[WATCHLIST] Duplicate key error (race condition)');
       return res.status(409).json({ message: 'Fund is already in your watchlist' });
     }
+    console.error('[WATCHLIST] Error adding:', error.message);
     res.status(500).json({ message: 'Error adding to watchlist' });
   }
 };
@@ -45,17 +55,22 @@ const removeFromWatchlist = async (req, res) => {
   try {
     const { schemeCode } = req.params;
 
+    console.log(`[WATCHLIST] Remove — user: ${req.user.id}, schemeCode: ${schemeCode}`);
+
     const entry = await Watchlist.findOneAndDelete({
       user: req.user.id,
       schemeCode,
     });
 
     if (!entry) {
+      console.warn(`[WATCHLIST] Not found — user: ${req.user.id}, schemeCode: ${schemeCode}`);
       return res.status(404).json({ message: 'Watchlist entry not found' });
     }
 
+    console.log(`[WATCHLIST] Removed — schemeCode: ${schemeCode}`);
     res.json({ message: 'Removed from watchlist' });
   } catch (error) {
+    console.error('[WATCHLIST] Error removing:', error.message);
     res.status(500).json({ message: 'Error removing from watchlist' });
   }
 };

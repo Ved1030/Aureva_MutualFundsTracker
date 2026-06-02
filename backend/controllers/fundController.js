@@ -4,12 +4,11 @@ const cache = require('../utils/cache');
 const MFAPI_BASE = 'https://api.mfapi.in';
 const CACHE_KEY = 'allFunds';
 const CACHE_TTL = 3600;
-const MAX_RESULTS = 50;
+const MAX_RESULTS = 25;
 const AXIOS_TIMEOUT = 10000;
 
 const searchFunds = async (req, res) => {
   try {
-    const start = Date.now();
     const q = req.query?.q;
 
     if (!q || typeof q !== 'string') {
@@ -37,6 +36,19 @@ const searchFunds = async (req, res) => {
           console.error('[SEARCH] invalid MFAPI response');
           return res.status(502).json({ message: 'Invalid response from MFAPI' });
         }
+
+        const seen = new Set();
+        const transformed = [];
+        for (let i = 0; i < funds.length; i++) {
+          const f = funds[i];
+          if (f && f.schemeCode && f.schemeName) {
+            if (!seen.has(f.schemeCode)) {
+              seen.add(f.schemeCode);
+              transformed.push({ schemeCode: f.schemeCode, schemeName: f.schemeName });
+            }
+          }
+        }
+        funds = transformed;
 
         cache.set(CACHE_KEY, funds, CACHE_TTL);
       } catch (fetchErr) {
@@ -66,10 +78,6 @@ const searchFunds = async (req, res) => {
       }
     }
 
-    const duration = Date.now() - start;
-    const mem = process.memoryUsage();
-    console.log(`[SEARCH] results=${results.length} duration=${duration}ms mem=${Math.round(mem.heapUsed / 1024 / 1024)}MB`);
-
     if (results.length === 0) {
       return res.status(404).json({ message: 'No funds found', data: [] });
     }
@@ -93,40 +101,30 @@ const getFundDetails = async (req, res) => {
       return res.status(400).json({ message: 'Invalid scheme code format' });
     }
 
-    const cacheKey = `fund_${schemeCode}`;
-    let data = cache.get(cacheKey);
+    try {
+      const response = await axios.get(`${MFAPI_BASE}/mf/${schemeCode}`, { timeout: AXIOS_TIMEOUT });
+      const data = response.data;
 
-    if (data === undefined) {
-      console.log(`[DETAILS] cache miss fund ${schemeCode}`);
-      try {
-        const response = await axios.get(`${MFAPI_BASE}/mf/${schemeCode}`, { timeout: AXIOS_TIMEOUT });
-        data = response.data;
+      if (!data || !data.meta) {
+        return res.status(404).json({ message: 'Fund not found' });
+      }
 
-        if (!data || !data.meta) {
+      res.json(data);
+    } catch (fetchErr) {
+      if (fetchErr.code === 'ECONNABORTED') {
+        console.error('[DETAILS] MFAPI timeout');
+        return res.status(504).json({ message: 'MFAPI request timed out. Please try again.' });
+      }
+      if (fetchErr.response) {
+        if (fetchErr.response.status === 404) {
           return res.status(404).json({ message: 'Fund not found' });
         }
-
-        cache.set(cacheKey, data, 3600);
-      } catch (fetchErr) {
-        if (fetchErr.code === 'ECONNABORTED') {
-          console.error('[DETAILS] MFAPI timeout');
-          return res.status(504).json({ message: 'MFAPI request timed out. Please try again.' });
-        }
-        if (fetchErr.response) {
-          if (fetchErr.response.status === 404) {
-            return res.status(404).json({ message: 'Fund not found' });
-          }
-          console.error(`[DETAILS] MFAPI HTTP ${fetchErr.response.status}`);
-          return res.status(502).json({ message: `MFAPI returned status ${fetchErr.response.status}` });
-        }
-        console.error('[DETAILS] network error:', fetchErr.message);
-        return res.status(502).json({ message: 'MFAPI is unavailable. Please try again.' });
+        console.error(`[DETAILS] MFAPI HTTP ${fetchErr.response.status}`);
+        return res.status(502).json({ message: `MFAPI returned status ${fetchErr.response.status}` });
       }
-    } else {
-      console.log(`[DETAILS] cache hit fund ${schemeCode}`);
+      console.error('[DETAILS] network error:', fetchErr.message);
+      return res.status(502).json({ message: 'MFAPI is unavailable. Please try again.' });
     }
-
-    res.json(data);
   } catch (err) {
     console.error('[DETAILS] error:', err.message);
     res.status(500).json({ message: 'Failed to load fund details. Please try again.' });

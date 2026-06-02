@@ -4,7 +4,6 @@ const auth = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.warn('[AUTH] No token provided');
     return res.status(401).json({ message: 'No token provided' });
   }
 
@@ -13,10 +12,8 @@ const auth = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    console.log(`[AUTH] Token verified — user: ${decoded.id}`);
     next();
   } catch (error) {
-    console.warn('[AUTH] Invalid token:', error.message);
     return res.status(401).json({ message: 'Invalid token' });
   }
 };

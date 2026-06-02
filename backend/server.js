@@ -11,28 +11,30 @@ dotenv.config();
 
 const app = express();
 
-console.log(`[SERVER] start env=${process.env.NODE_ENV || 'development'} port=${process.env.PORT || '5000'}`);
-
 app.set('query parser', 'extended');
 
-const allowedOrigins = [
+const allowedOrigins = [];
+const originCandidates = [
   process.env.CLIENT_URL,
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:4173',
-].filter(Boolean);
+];
+for (let i = 0; i < originCandidates.length; i++) {
+  if (originCandidates[i]) {
+    allowedOrigins.push(originCandidates[i]);
+  }
+}
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (origin.endsWith('.vercel.app')) {
-      console.log(`[CORS] Allowed Vercel origin: ${origin}`);
       return callback(null, true);
     }
-    console.warn(`[CORS] Blocked origin: ${origin}`);
     return callback(null, false);
   },
   credentials: true,
@@ -72,14 +74,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-console.log('[SERVER] routes registered');
-
 app.use('/api/auth', authRoutes);
 app.use('/api/funds', fundRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 
 app.use((req, res) => {
-  console.warn(`[SERVER] 404 — ${req.method} ${req.originalUrl}`);
   res.status(404).json({ message: 'Route not found' });
 });
 
@@ -88,32 +87,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
-const cache = require('./utils/cache');
-
-const MB = (bytes) => Math.round(bytes / 1024 / 1024);
-
-setInterval(() => {
-  const mem = process.memoryUsage();
-  const cacheStats = cache.getStats();
-  console.log('[MEMORY]', JSON.stringify({
-    rss: MB(mem.rss) + 'MB',
-    heapTotal: MB(mem.heapTotal) + 'MB',
-    heapUsed: MB(mem.heapUsed) + 'MB',
-    external: MB(mem.external) + 'MB',
-    cacheKeys: cacheStats.keys,
-    cacheSizeMB: cacheStats.totalSizeMB + 'MB',
-  }));
-}, 60000);
-
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  console.log('[SERVER] MongoDB connected, starting HTTP server...');
   app.listen(PORT, () => {
-    const memInit = MB(process.memoryUsage().rss);
-    console.log(`[SERVER] started port=${PORT} mongo=connected mem=${memInit}MB cors=${allowedOrigins.length}+1`);
+    console.log(`[SERVER] started port=${PORT}`);
   });
 }).catch((err) => {
-    console.error(`[SERVER] failed to start mongo=${err.message}`);
+  console.error(`[SERVER] failed to start mongo=${err.message}`);
   process.exit(1);
 });

@@ -21,21 +21,4 @@ function del(key) {
   store.delete(key);
 }
 
-function getStats() {
-  const mem = process.memoryUsage();
-  let totalSizeKB = 0;
-  for (const [, entry] of store) {
-    try {
-      totalSizeKB += Math.round(JSON.stringify(entry.value).length / 1024);
-    } catch {}
-  }
-  return {
-    keys: store.size,
-    totalSizeKB,
-    totalSizeMB: (totalSizeKB / 1024).toFixed(1),
-    heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
-    rssMB: Math.round(mem.rss / 1024 / 1024),
-  };
-}
-
-module.exports = { get, set, del, getStats };
+module.exports = { get, set, del };

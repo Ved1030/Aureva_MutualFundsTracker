@@ -62,7 +62,10 @@ export default function Home() {
       setGroupedResults([]);
       const status = err.response?.status;
       const msg = err.response?.data?.message;
-      if (status === 504 || status === 502) {
+      if (status === 404) {
+        setError(msg || 'No funds found matching your search. Try a different name like "SBI", "HDFC", or "ICICI".');
+        setErrorType('empty');
+      } else if (status === 504 || status === 502) {
         setError(msg || 'The fund data service is temporarily unavailable. Please try again.');
         setErrorType('server');
       } else if (status === 400) {

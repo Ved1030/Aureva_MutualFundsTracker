@@ -97,6 +97,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
+const cache = require('./utils/cache');
+
+const MB = (bytes) => Math.round(bytes / 1024 / 1024);
+
+setInterval(() => {
+  const mem = process.memoryUsage();
+  const cacheStats = cache.getStats();
+  console.log('[MEMORY]', JSON.stringify({
+    rss: MB(mem.rss) + 'MB',
+    heapTotal: MB(mem.heapTotal) + 'MB',
+    heapUsed: MB(mem.heapUsed) + 'MB',
+    external: MB(mem.external) + 'MB',
+    cacheKeys: cacheStats.keys,
+    cacheMaxKeys: cacheStats.maxKeys,
+    cacheSizeMB: cacheStats.totalSizeMB + 'MB',
+    cacheHitRate: cacheStats.hitRate,
+  }));
+}, 60000);
+
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
@@ -107,6 +126,8 @@ connectDB().then(() => {
     console.log(`  [SERVER] PORT: ${PORT}`);
     console.log(`  [SERVER] NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
     console.log(`  [SERVER] MongoDB: Connected`);
+    console.log(`  [SERVER] Memory limit: ${MB(process.memoryUsage().rss)}MB (initial)`);
+    console.log(`  [SERVER] Cache max keys: ${cache.getStats().maxKeys}`);
     console.log(`  [SERVER] CORS: ${allowedOrigins.length} local origins + *.vercel.app`);
     console.log('══════════════════════════════════════════');
   });

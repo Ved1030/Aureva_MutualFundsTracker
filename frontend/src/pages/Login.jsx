@@ -46,7 +46,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-slate-50 lg:rounded-l-[2.5rem]">
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 bg-slate-50 lg:rounded-l-[2.5rem]">
         <div className="w-full max-w-md">
           <div className="text-center mb-8 lg:hidden">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -63,7 +63,7 @@ export default function Login() {
             <p className="text-slate-400 mt-1">Access your fund tracker dashboard</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-5">
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-5">
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -13,9 +13,9 @@ function StatCard({ icon, label, value, color }) {
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
         {icon}
       </div>
-      <div>
-        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</p>
-        <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5">{value}</p>
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider truncate">{label}</p>
+        <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-0.5 truncate">{value}</p>
       </div>
     </div>
   );
@@ -125,7 +125,7 @@ export default function Home() {
     };
 
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col items-center justify-center py-20 px-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
         {icons[errorType] || icons.empty}
         <h3 className="text-lg font-semibold text-slate-600 mt-5 mb-1.5">
           {errorType === 'network' ? 'Connection Error' :
@@ -144,24 +144,24 @@ export default function Home() {
   };
 
   return (
-    <div>
+    <div className="overflow-x-hidden">
       <Marquee />
 
       <div className="hero-gradient relative overflow-hidden">
-        <div className="hero-glow bg-indigo-500 -top-40 -left-40" />
-        <div className="hero-glow bg-purple-500 top-20 -right-20" />
-        <div className="relative max-w-4xl mx-auto px-4 py-20 sm:py-28 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/10 mb-8">
+        <div className="hero-glow bg-indigo-500 -top-40 -left-40 max-md:hidden" />
+        <div className="hero-glow bg-purple-500 top-20 -right-20 max-md:hidden" />
+        <div className="relative max-w-4xl mx-auto px-4 py-16 sm:py-20 md:py-28 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/10 mb-6 md:mb-8">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-sm font-medium text-white/80">Track 10,000+ Indian Mutual Funds</span>
+            <span className="text-xs md:text-sm font-medium text-white/80">Track 10,000+ Indian Mutual Funds</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-5 tracking-tight">
+          <h1 className="text-[clamp(28px,5vw,32px)] sm:text-5xl md:text-[42px] lg:text-7xl font-extrabold text-white leading-tight mb-5 tracking-tight">
             Track Indian{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300">
               Mutual Funds
             </span>
           </h1>
-          <p className="text-lg sm:text-xl text-white/60 max-w-2xl mx-auto mb-10 font-medium">
+          <p className="text-base sm:text-lg md:text-xl text-white/60 max-w-2xl mx-auto mb-8 md:mb-10 font-medium px-2">
             Search, analyze and monitor your favorite mutual funds with real-time NAV tracking and interactive charts
           </p>
           <SearchBar
@@ -169,7 +169,7 @@ export default function Home() {
             onDebouncedSearch={handleDebouncedSearch}
             loading={loading}
           />
-          <div className="flex items-center justify-center gap-8 mt-8 text-white/40 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 mt-8 text-white/40 text-sm">
             <span className="flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -194,7 +194,7 @@ export default function Home() {
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {searched && !loading && !error && results.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 animate-fade-in-up">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-8 animate-fade-in-up">
             <StatCard
               icon={<svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
               label="Search Results"
@@ -230,7 +230,7 @@ export default function Home() {
 
         {!loading && groupedResults.length > 0 && (
           <div className="animate-fade-in-up">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">
                   {results.length > groupedResults.length
@@ -243,7 +243,7 @@ export default function Home() {
               </div>
               <button
                 onClick={() => { setResults([]); setGroupedResults([]); setSearched(false); setError(''); }}
-                className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors self-start sm:self-auto"
               >
                 Clear Results
               </button>
@@ -265,7 +265,7 @@ export default function Home() {
 
         {!loading && !searched && (
           <div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
               <StatCard
                 icon={<svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
                 label="Total Funds"

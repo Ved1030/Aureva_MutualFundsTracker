@@ -6,8 +6,8 @@ import { getFundDetails, addToWatchlist } from '../services/fundService';
 function StatCard({ label, value, suffix, color = 'text-slate-800' }) {
   return (
     <div className="stat-card bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-xl font-bold ${color}`}>
+      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1 truncate">{label}</p>
+      <p className={`text-xl font-bold truncate ${color}`}>
         {value}
         {suffix && <span className="text-sm font-medium text-slate-400 ml-1">{suffix}</span>}
       </p>
@@ -24,6 +24,7 @@ export default function FundDetails() {
   const [errorType, setErrorType] = useState('');
   const [added, setAdded] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [nameExpanded, setNameExpanded] = useState(false);
 
   useEffect(() => {
     loadFund();
@@ -94,6 +95,9 @@ export default function FundDetails() {
     return { latest, oldest, highest, lowest, growth, yearsOfHistory, totalPoints: navData.length };
   }, [navData]);
 
+  const schemeName = fund?.meta?.scheme_name || '';
+  const shouldTruncate = schemeName.length > 80;
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -139,7 +143,7 @@ export default function FundDetails() {
 
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 shadow-sm max-w-md mx-auto">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 shadow-sm max-w-md mx-auto">
           <div className="flex justify-center mb-5">
             {icons[errorType] || icons.notfound}
           </div>
@@ -170,10 +174,10 @@ export default function FundDetails() {
         Back
       </button>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm mb-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-sm mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-md uppercase tracking-wider">
                 Mutual Fund
               </span>
@@ -181,9 +185,23 @@ export default function FundDetails() {
                 <span className="text-xs text-slate-400 font-medium">{fund.meta.scheme_category}</span>
               )}
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 leading-snug">
-              {fund?.meta?.scheme_name}
-            </h1>
+            <div>
+              <h1
+                className={`text-xl sm:text-2xl md:text-[30px] lg:text-4xl font-bold text-slate-800 leading-snug ${
+                  shouldTruncate && !nameExpanded ? 'line-clamp-3' : ''
+                }`}
+              >
+                {schemeName}
+              </h1>
+              {shouldTruncate && (
+                <button
+                  onClick={() => setNameExpanded(!nameExpanded)}
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 mt-1 transition-colors"
+                >
+                  {nameExpanded ? 'Show Less' : 'Read More'}
+                </button>
+              )}
+            </div>
             <p className="text-sm text-slate-400 mt-1.5 font-mono">Scheme Code: {fund?.meta?.scheme_code}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -191,7 +209,7 @@ export default function FundDetails() {
               <button
                 onClick={handleAdd}
                 disabled={adding}
-                className="btn-primary px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="btn-primary px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -199,7 +217,7 @@ export default function FundDetails() {
                 {adding ? 'Adding...' : 'Add to Watchlist'}
               </button>
             ) : (
-              <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 text-sm font-semibold rounded-xl flex items-center gap-2">
+              <div className="px-5 py-2.5 bg-emerald-50 text-emerald-600 text-sm font-semibold rounded-xl flex items-center gap-2 whitespace-nowrap">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
@@ -209,7 +227,7 @@ export default function FundDetails() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mt-6">
           <StatCard
             label="Latest NAV"
             value={analytics?.latest ? `₹${analytics.latest.toFixed(4)}` : 'N/A'}
@@ -244,7 +262,7 @@ export default function FundDetails() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-sm">
         <div className="mb-2">
           <h2 className="text-lg font-bold text-slate-800">NAV Performance</h2>
           <p className="text-sm text-slate-400 mt-0.5">Historical net asset value over time</p>
